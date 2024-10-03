@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Countdown Timer</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/js-cookie/3.0.1/js.cookie.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f0f0f0;
+        }
+        #timerDisplay {
+            font-size: 48px;
+            margin-bottom: 20px;
+        }
+        #runCount {
+            font-size: 120px;
+            margin-bottom: 20px;
+        }
+        button {
+            font-size: 18px;
+            padding: 10px 20px;
+            margin: 5px;
+        }
+        input {
+            font-size: 18px;
+            padding: 5px;
+            width: 60px;
+        }
+    </style>
+</head>
+<body>
+    <div id="timerDisplay">15</div>
+    <div id="runCount">0</div>
+    <div>
+        <button id="startButton">Start</button>
+        <button id="resetButton">Reset Count</button>
+    </div>
+    <div>
+        <label for="durationInput">Timer Duration (seconds):</label>
+        <input type="number" id="durationInput" min="1" value="15">
+    </div>
+
+    <audio id="alertSound" src="https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3"></audio>
+
+    <script>
+        const timerDisplay = document.getElementById('timerDisplay');
+        const runCountDisplay = document.getElementById('runCount');
+        const startButton = document.getElementById('startButton');
+        const resetButton = document.getElementById('resetButton');
+        const durationInput = document.getElementById('durationInput');
+        const alertSound = document.getElementById('alertSound');
+
+        let timer;
+        let timeLeft;
+        let isRunning = false;
+
+        function loadFromCookies() {
+            const duration = Cookies.get('timerDuration');
+            const runCount = Cookies.get('runCount');
+            
+            durationInput.value = duration ? duration : 15;
+            runCountDisplay.textContent = runCount ? runCount : 0;
+        }
+
+        function saveToCookies() {
+            Cookies.set('timerDuration', durationInput.value, { expires: 365 });
+            Cookies.set('runCount', runCountDisplay.textContent, { expires: 365 });
+        }
+
+        function startTimer() {
+            if (isRunning) return;
+
+            isRunning = true;
+            timeLeft = parseInt(durationInput.value);
+            timerDisplay.textContent = timeLeft;
+
+            timer = setInterval(() => {
+                timeLeft--;
+                timerDisplay.textContent = timeLeft;
+
+                if (timeLeft <= 0) {
+                    clearInterval(timer);
+                    alertSound.play();
+                    runCountDisplay.textContent = parseInt(runCountDisplay.textContent) + 1;
+                    saveToCookies();
+                    isRunning = false;
+                }
+            }, 1000);
+        }
+
+        function resetCount() {
+            runCountDisplay.textContent = 0;
+            saveToCookies();
+        }
+
+        startButton.addEventListener('click', startTimer);
+        resetButton.addEventListener('click', resetCount);
+        durationInput.addEventListener('change', saveToCookies);
+
+        // Load saved values from cookies
+        loadFromCookies();
+
+        // Prevent screen from turning off
+        function keepAwake() {
+            if ('wakeLock' in navigator) {
+                navigator.wakeLock.request('screen').then(() => {
+                    console.log('Wake Lock is active');
+                }).catch((err) => {
+                    console.error(`${err.name}, ${err.message}`);
+                });
+            } else {
+                console.warn('Wake Lock API not supported');
+            }
+        }
+
+        keepAwake();
+    </script>
+</body>
+</html>
